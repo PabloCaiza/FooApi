@@ -1,65 +1,64 @@
-from flask import Flask, jsonify, request
-import products
+from flask import Flask, jsonify, request, abort
 import objectService
 import IngredientsClient
-
+import RecipeRepository
 
 app = Flask(__name__)
 
 
-@app.route('/products', methods=['GET'])
-def getProducts():
-    return jsonify(products)
+@app.route('/recipes', methods=['GET'])
+def getRecipes():
+    recipes = RecipeRepository.getRecipes()
+    new_recipes = []
+    for recipe in recipes:
+        recipe.update()
+        recipe['_id'] = str(recipe['_id'])
+        new_recipes.append(recipe)
+    return jsonify(new_recipes)
 
 
-@app.route('/products/<string:name>', methods=['GET'])
-def getProductByName(name):
-    products_found = [product for product in products if product['name'] == name]
-    if len(products_found) > 0:
-        return jsonify(products_found)
-    return jsonify({"message": "Product not found"})
+@app.route('/recipes/<string:id>', methods=['GET'])
+def getRecipeById(id):
+    # products_found = [product for product in products if product['name'] == name]
+    product_found = RecipeRepository.findRecipeById(id)
+    if product_found:
+        product_found['_id'] = str(product_found['_id'])
+        return jsonify(product_found)
+    abort(404)
 
 
-@app.route('/products', methods=['POST'])
-def addProduct():
-    products.append(request.json)
+@app.route('/recipes', methods=['POST'])
+def addRecipe():
+    RecipeRepository.insertRecipe(request.json)
     return 'received'
 
 
-@app.route('/products/<string:product_name>', methods=['DELETE'])
-def deleteProduct(product_name):
-    products_found = [product for product in products if product['name'] == product_name]
-    if len(products_found) > 0:
-        products.remove(products_found[0])
+@app.route('/recipes/<string:id>', methods=['DELETE'])
+def deleteRecipe(id):
+    products_found = RecipeRepository.findRecipeById(id)
+    if products_found:
+        RecipeRepository.removeRecipe(id)
         return jsonify("deleted successfully")
-    return jsonify({"message": "not founded"})
+    abort(404)
 
 
-@app.route('/products/<string:product_name>', methods=['PUT'])
-def editProduct(product_name):
-    product_found = [product for product in products if product['name'] == product_name]
-    if len(product_found) > 0:
-        product_found[0]['name'] = request.json['name']
-        product_found[0]['price'] = request.json['price']
-        product_found[0]['quantity'] = request.json['quantity']
+@app.route('/recipes/<string:id>', methods=['PUT'])
+def editRecipe(id):
+    product_found = RecipeRepository.findRecipeById(id)
+    if product_found:
+        RecipeRepository.updateRecipe(id, request.json)
         return jsonify({"message": "Updated Successfully"})
 
-    return jsonify({"message": "not founded"})
+    abort(404)
 
 
-@app.route('/lea')
-def hello_world():  # put application's code here
-    return 'Hello World!'
-
-
-@app.route('/predictIngredients',methods=['POST'])
+@app.route('/predictIngredients', methods=['POST'])
 def predictIngredientes():
-    uploaded_file =request.files['file']
+    uploaded_file = request.files['file']
     ingredients = objectService.detectIngredients(uploaded_file)
     print(list(ingredients.keys()))
 
     return jsonify(IngredientsClient.findByIngredients(['apple']))
-
 
 
 if __name__ == '__main__':
