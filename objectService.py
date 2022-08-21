@@ -28,7 +28,7 @@ MIN_CONF_THRESH = float(0.60)
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 
-PATH_TO_SAVED_MODEL = "my_model/saved_model"
+PATH_TO_SAVED_MODEL = "my_rccn_model/saved_model"
 
 # LOAD SAVED MODEL AND BUILD DETECTION FUNCTION
 detect_fn = tf.saved_model.load(PATH_TO_SAVED_MODEL)
